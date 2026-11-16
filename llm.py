@@ -33,27 +33,22 @@ def _get_client() -> OpenAI:
     return _client
 
 
-def generate_quiz(text_chunk: str, num_questions: int = 5) -> Quiz:
-    """Generate a multiple-choice quiz from a chunk of lecture-notes text.
+QUIZ_FORMAT_INSTRUCTIONS = (
+    "Each question must have exactly 4 answer choices, one correct answer "
+    "that matches one of the choices exactly, and a short explanation of "
+    "why that answer is correct.\n\n"
+    "Important: the 'question' field must contain ONLY the question text "
+    "itself. Do not include the answer choices, option letters (A/B/C/D), "
+    "or the correct answer inside the 'question' field - those belong only "
+    "in the separate 'choices' and 'correct_answer' fields."
+)
 
-    Returns a validated Quiz. Retries the generation once if the model's
-    output fails pydantic validation, then raises so the caller can show a
-    friendly error.
-    """
-    prompt = (
-        f"You are a study assistant. Based only on the lecture notes below, "
-        f"write exactly {num_questions} multiple-choice quiz questions. "
-        f"Each question must have exactly 4 answer choices, one correct "
-        f"answer that matches one of the choices exactly, and a short "
-        f"explanation of why that answer is correct.\n\n"
-        f"Important: the 'question' field must contain ONLY the question "
-        f"text itself. Do not include the answer choices, option letters "
-        f"(A/B/C/D), or the correct answer inside the 'question' field - "
-        f"those belong only in the separate 'choices' and 'correct_answer' "
-        f"fields.\n\n"
-        f"Lecture notes:\n{text_chunk}"
-    )
 
+def _generate_quiz_json(prompt: str) -> Quiz:
+    """Shared retry logic for any prompt that asks the LLM for a Quiz as
+    structured JSON. Retries once if the output fails pydantic validation
+    or the request errors out, then raises so the caller can show a
+    friendly error."""
     last_error: Exception | None = None
     for attempt in range(2):  # one try + one retry
         try:
@@ -75,9 +70,38 @@ def generate_quiz(text_chunk: str, num_questions: int = 5) -> Quiz:
         except Exception as e:  # API errors, rate limits, etc.
             last_error = e
 
+        if attempt == 0:
+            time.sleep(1)
+
     raise RuntimeError(
         f"Could not generate a valid quiz after 2 attempts: {last_error}"
     )
+
+
+def generate_quiz(text_chunk: str, num_questions: int = 5) -> Quiz:
+    """Generate a multiple-choice quiz from a chunk of lecture-notes text."""
+    prompt = (
+        f"You are a study assistant. Based only on the lecture notes below, "
+        f"write exactly {num_questions} multiple-choice quiz questions.\n\n"
+        f"{QUIZ_FORMAT_INSTRUCTIONS}\n\n"
+        f"Lecture notes:\n{text_chunk}"
+    )
+    return _generate_quiz_json(prompt)
+
+
+def generate_weak_topics_quiz(text_chunk: str, missed_questions: list[str]) -> Quiz:
+    """Generate a fresh quiz re-testing the concepts behind questions the
+    student previously got wrong, phrased differently from the originals."""
+    missed_list = "\n".join(f"- {q}" for q in missed_questions)
+    prompt = (
+        f"A student got the following quiz questions wrong:\n{missed_list}\n\n"
+        f"Based only on the lecture notes below, write one NEW multiple-choice "
+        f"question for each concept above, testing the same underlying idea "
+        f"but phrased differently from the original question.\n\n"
+        f"{QUIZ_FORMAT_INSTRUCTIONS}\n\n"
+        f"Lecture notes:\n{text_chunk}"
+    )
+    return _generate_quiz_json(prompt)
 
 
 def _generate_text(prompt: str, retries: int = 3) -> str:

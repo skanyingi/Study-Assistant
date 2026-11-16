@@ -109,6 +109,42 @@
   flow via AppTest (date input -> Generate Schedule -> correct list
   rendered, zero exceptions).
 
+## Slice 7 — Error handling, spinners, caching
+- Added a 1s backoff before `generate_quiz`'s retry (it previously retried
+  instantly with no delay, unlike `_generate_text`'s backoff).
+- Wrapped `generate_summary`/`generate_quiz` with `st.cache_data` in app.py
+  so clicking buttons or unrelated reruns don't re-call the API for the same
+  input text. Verified: calling the same button twice only triggered one
+  underlying call (mocked test, call counted directly).
+- Wrapped both LLM calls in try/except RuntimeError in app.py, showing a
+  friendly "please try again" message instead of a raw traceback, with
+  technical details available in a small caption for debugging. Verified
+  with a simulated failure: zero unhandled exceptions.
+- Final regression check: ran the complete app against the real OpenRouter
+  API - upload -> summary -> quiz -> answer -> score -> schedule - all
+  passed with zero exceptions.
+- This completes the spec's must-ship scope (summary, quiz, schedule). The
+  weak-topics report remains a stretch goal, not built unless requested.
+
+## Stretch goal — Weak Topics report
+- Refactored `generate_quiz`'s JSON-schema retry logic into a shared
+  `_generate_quiz_json()` helper to avoid duplicating it for the new
+  function.
+- Added `generate_weak_topics_quiz(text_chunk, missed_questions)` to
+  llm.py: takes the questions a student got wrong and generates new
+  questions testing the same concepts, phrased differently from the
+  originals (not just repeating the same question).
+- app.py: tracks wrong answers in session_state after grading the main
+  quiz; shows a "Weak Topics" section (only when there are wrong answers)
+  with its own "Review Weak Topics" button, cached generation, form,
+  scoring, and friendly error handling, matching the rest of the app's
+  patterns. Generating a new main quiz clears stale weak-topic state.
+- Verified with a mocked test (confirmed the exact wrong question is
+  passed through, section visibility logic, and scoring) and a real
+  end-to-end run: got 2 real questions wrong (scalability, block storage),
+  and the generated weak-topics quiz asked genuinely rephrased versions of
+  those same two concepts - not verbatim repeats.
+
 ## Slice 4 — Summary generation
 - Added `_generate_text()` to `llm.py`: plain-text Gemini call with exponential
   backoff (1s/2s/4s) on API errors, so rate limits don't immediately fail.
