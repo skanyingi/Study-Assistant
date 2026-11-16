@@ -93,6 +93,22 @@
 - Found and removed a stray `.env.txt` that reappeared with both API keys in
   plaintext (git-ignored, never tracked - no exposure risk, just redundant).
 
+## Slice 6 — schedule.py + study schedule UI
+- `generate_schedule(exam_date, today=None)`: spaced-repetition review dates
+  at 30/14/7/4/2/1 days before the exam, filtering out any that have already
+  passed. Raises ValueError if exam_date isn't in the future.
+- Caught a dead-code bug before even running it: an initial "exam is very
+  close" fallback branch could never actually trigger, since the 1-day-before
+  interval is always >= today whenever exam_date > today. Removed it and
+  added a real test for the edge case that matters (exam date in the past).
+- Added the Study Schedule section to app.py: a date input (min value =
+  tomorrow, so past dates aren't even selectable) and a button that displays
+  the generated review dates with days-from-now counts.
+- Verified: generate_schedule() directly for a 6-week exam, a 3-day exam, an
+  exam tomorrow, and a past exam date (correctly raises); and the full UI
+  flow via AppTest (date input -> Generate Schedule -> correct list
+  rendered, zero exceptions).
+
 ## Slice 4 — Summary generation
 - Added `_generate_text()` to `llm.py`: plain-text Gemini call with exponential
   backoff (1s/2s/4s) on API errors, so rate limits don't immediately fail.

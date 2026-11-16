@@ -1,8 +1,11 @@
-# Streamlit UI: PDF upload, summary, and quiz with answer checking.
+# Streamlit UI: PDF upload, summary, quiz, and study schedule.
+from datetime import date, timedelta
+
 import streamlit as st
 
 from llm import generate_quiz, generate_summary
 from pdf_utils import chunk_text, clean_text, extract_text, is_empty_or_scanned
+from schedule import generate_schedule
 
 st.set_page_config(page_title="Notes to Exam-Ready", page_icon="📚")
 st.title("📚 Notes to Exam-Ready")
@@ -72,3 +75,19 @@ if uploaded_file is not None:
                     st.caption(q.explanation)
 
                 st.info(f"Score: {score} / {len(quiz.questions)}")
+
+        st.subheader("Study Schedule")
+        exam_date = st.date_input(
+            "When is your exam?", min_value=date.today() + timedelta(days=1)
+        )
+        if st.button("Generate Schedule"):
+            try:
+                st.session_state["schedule"] = generate_schedule(exam_date)
+            except ValueError as e:
+                st.error(str(e))
+
+        if "schedule" in st.session_state:
+            st.write("Review your notes on these dates, leading up to the exam:")
+            for review_date in st.session_state["schedule"]:
+                days_away = (review_date - date.today()).days
+                st.write(f"- **{review_date}** ({days_away} day(s) from now)")
