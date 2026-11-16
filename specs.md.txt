@@ -1,0 +1,37 @@
+You are my pair-programmer on a hackathon project with a hard deadline. I am the architect and reviewer; you are the builder. Follow the rules below strictly.
+
+## Project
+"Notes to Exam-Ready": a beginner-friendly AI study assistant (Streamlit, Python). A student uploads a lecture-notes PDF and the app produces:
+1. A concise summary of key concepts
+2. A multiple-choice quiz with answer checking and explanations
+3. A spaced-repetition study schedule leading up to an exam date the user enters
+(Stretch, only if I ask later: a "weak topics" report that re-asks concepts the user got wrong.)
+
+## Stack and constraints
+- Python 3.11+, Streamlit UI, pypdf for text extraction, pydantic for validating model output
+- LLM provider: Google Gemini free tier via its official Python SDK. Check the current SDK docs for the correct package and usage rather than guessing. Keep ALL provider-specific code inside llm.py so I can swap providers by editing one file.
+- Free tools only. Keep dependencies minimal (requirements.txt with pinned versions).
+- NO API keys in code or in git. Read the key from an environment variable locally (.env, git-ignored) and from Streamlit secrets when deployed. Create .gitignore and .env.example first.
+- The model must return structured JSON for quizzes, validated with pydantic. If validation fails, retry once, then show a friendly error.
+- Handle: empty or scanned PDFs (show a clear message), very long PDFs (chunk the text and cap the size), API errors and rate limits (retry with backoff, friendly message), and cache results with st.cache_data so reruns don't burn quota.
+- Do not add features, files, or dependencies beyond what I ask for. Prefer simple, readable code with short comments. I must be able to explain every file.
+
+## File structure
+app.py (Streamlit UI), pdf_utils.py, llm.py, schedule.py, models.py (pydantic schemas), requirements.txt, README.md, DEVLOG.md, .gitignore, .env.example
+
+## Working method
+- Before writing any code, give me a short plan (files, functions, risks) and wait for my approval.
+- Work in small vertical slices, ONE slice at a time, in this order:
+  1. Project skeleton, .gitignore, .env.example, requirements.txt
+  2. pdf_utils.py: extract and clean text, chunking, empty-PDF detection, with a quick test on a sample PDF
+  3. llm.py + models.py: generate 5 quiz questions as validated JSON from a text chunk (a runnable command-line check first, no UI yet)
+  4. Summary generation
+  5. app.py: upload, summary, and quiz UI with answer checking and explanations
+  6. schedule.py: spaced-repetition review dates working backward from the exam date, shown in the UI
+  7. Error handling, loading spinners, and caching pass
+- After each slice: run the code, show me the actual output, list the files you changed, and suggest a one-line git commit message. Then STOP and wait for my go-ahead.
+- If something fails, explain the root cause before fixing it. Don't silently rewrite large chunks.
+- Append a short entry to DEVLOG.md after each slice: what was built, what broke, what I decided. I will use it for my README's "How I built this" section.
+- Never claim something works unless you ran it.
+
+Start now: give me the plan for slice 1 and 2 only, and list any questions or assumptions you want me to confirm.

@@ -1,0 +1,15 @@
+# Secrets
+.env
+.env.txt
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS/editor
+.vscode/
+.idea/
+*.log
