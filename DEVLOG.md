@@ -47,6 +47,28 @@
   (object storage, NoSQL database types, shared responsibility model, etc.),
   all passing pydantic validation.
 
+## Slice 5 — app.py UI
+- Built upload -> summary -> quiz -> answer-checking flow in `app.py`, using
+  st.session_state to avoid re-extracting on every rerun, and st.form so quiz
+  answers are graded all at once.
+- Bug found and fixed: running `streamlit run app.py` directly bound to `::`
+  (dual-stack) and failed silently on Windows with repeated
+  `OSError: [WinError 64]` accept failures - the log claimed the app was up,
+  but it was unreachable. Fixed by binding explicitly with
+  `--server.address 127.0.0.1`; confirmed via the `/_stcore/health` endpoint.
+- Verified the real upload -> summary -> quiz flow using Streamlit's AppTest
+  utility against the actual sample PDF and the real Gemini API.
+- Hit the Gemini free tier's daily quota while testing: 20 requests/day on
+  gemini-2.5-flash-lite, shared across summary and quiz calls. Worth
+  remembering for demo day and when deciding how to handle this error
+  message in Slice 7 (friendly "try again later" vs. a raw exception).
+- To keep testing the UI logic without more quota usage, mocked
+  `generate_summary`/`generate_quiz` and re-ran the full flow. Diagnosed a
+  false bug in my own test script (AppTest form widgets need `set_value()`
+  chained directly with the submit click, not run separately) - the app
+  logic itself was correct once the test was fixed. Verified: all 5
+  questions scored correctly end-to-end.
+
 ## Slice 4 — Summary generation
 - Added `_generate_text()` to `llm.py`: plain-text Gemini call with exponential
   backoff (1s/2s/4s) on API errors, so rate limits don't immediately fail.
