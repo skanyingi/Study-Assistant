@@ -145,6 +145,21 @@
   and the generated weak-topics quiz asked genuinely rephrased versions of
   those same two concepts - not verbatim repeats.
 
+## Calendar integration (.ics download)
+- Added `generate_ics(review_dates, exam_date)` to schedule.py: hand-built
+  iCalendar text (no new dependency), one all-day VEVENT per review date
+  plus one for "EXAM DAY", with correct exclusive DTEND per the spec.
+- Added a "Add to Calendar" download button in app.py's Study Schedule
+  section, with a caption explaining the manual import step (download then
+  open the file in your calendar app - not fully automatic; a true one-click
+  auto-add would need OAuth, which was deliberately scoped out as too heavy
+  for this project).
+- Verified the .ics structure by temporarily installing the real `icalendar`
+  library (not added to requirements.txt) and parsing the generated file
+  with it: parsed cleanly, correct dates and titles, 7 events total.
+- Verified the full UI flow via AppTest: upload -> set exam date -> generate
+  schedule -> download button appears with correct underlying data.
+
 ## Slice 4 — Summary generation
 - Added `_generate_text()` to `llm.py`: plain-text Gemini call with exponential
   backoff (1s/2s/4s) on API errors, so rate limits don't immediately fail.

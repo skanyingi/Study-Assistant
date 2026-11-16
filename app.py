@@ -5,7 +5,7 @@ import streamlit as st
 
 from llm import generate_quiz, generate_summary, generate_weak_topics_quiz
 from pdf_utils import chunk_text, clean_text, extract_text, is_empty_or_scanned
-from schedule import generate_schedule
+from schedule import generate_ics, generate_schedule
 
 st.set_page_config(page_title="Notes to Exam-Ready", page_icon="📚", layout="centered")
 
@@ -173,6 +173,7 @@ if uploaded_file is not None:
         if st.button("Generate Schedule"):
             try:
                 st.session_state["schedule"] = generate_schedule(exam_date)
+                st.session_state["schedule_exam_date"] = exam_date
             except ValueError as e:
                 st.error(str(e))
 
@@ -181,3 +182,17 @@ if uploaded_file is not None:
             for review_date in st.session_state["schedule"]:
                 days_away = (review_date - date.today()).days
                 st.write(f"- **{review_date}** ({days_away} day(s) from now)")
+
+            ics_text = generate_ics(
+                st.session_state["schedule"], st.session_state["schedule_exam_date"]
+            )
+            st.download_button(
+                "📅 Add to Calendar",
+                data=ics_text,
+                file_name="study_schedule.ics",
+                mime="text/calendar",
+            )
+            st.caption(
+                "Downloads a calendar file. Open it to import these dates into "
+                "Google Calendar, Outlook, Apple Calendar, or any other calendar app."
+            )
