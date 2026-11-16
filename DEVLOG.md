@@ -46,3 +46,13 @@
   generated 5 valid quiz questions grounded in the actual lecture content
   (object storage, NoSQL database types, shared responsibility model, etc.),
   all passing pydantic validation.
+
+## Slice 4 — Summary generation
+- Added `_generate_text()` to `llm.py`: plain-text Gemini call with exponential
+  backoff (1s/2s/4s) on API errors, so rate limits don't immediately fail.
+- Added `generate_summary(chunks)`: summarizes each chunk individually, then
+  (if more than one chunk) combines the partial summaries into one organized,
+  deduplicated final summary. Handles long PDFs without extra files, per spec.
+- Verified on the real 2-chunk sample PDF: produced an accurate, well-organized
+  bulleted summary covering cloud storage types, database types, migration
+  strategies, and cloud security practices, correctly merged from both chunks.
