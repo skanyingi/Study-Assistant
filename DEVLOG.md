@@ -26,3 +26,23 @@
   U+E000-U+F8FF in `clean_text` rather than papering over it at the print site.
 - Chunking breaks on paragraph (`\n\n`) boundaries, with a hard-split fallback
   for any single paragraph longer than the max chunk size.
+
+## Slice 3 — llm.py + models.py
+- Confirmed the API key in `.env` is not a freshly rotated key (it matches the
+  one that was exposed in the old `.env.txt`). Owner reviewed and chose to
+  proceed with it as-is.
+- `models.py`: `QuizQuestion` (question, 4 choices, correct_answer, explanation)
+  with validators enforcing exactly 4 choices and that correct_answer matches
+  one of them; `Quiz` wraps a list of questions.
+- `llm.py`: Gemini client via `google-genai`, `generate_quiz()` using
+  `response_mime_type="application/json"` + `response_schema=Quiz` for
+  structured output, with one retry on validation/API failure.
+- Bug found and fixed: first command-line test failed with `503 UNAVAILABLE`
+  on the `gemini-flash-latest` model alias (server-side overload, not an auth
+  or network issue - confirmed by testing the raw HTTPS endpoint and
+  `client.models.list()` separately, both of which worked fine). Switched
+  `MODEL_NAME` to `gemini-2.5-flash-lite`, which responded immediately.
+- Verified end-to-end on the real sample PDF: extracted text -> chunked ->
+  generated 5 valid quiz questions grounded in the actual lecture content
+  (object storage, NoSQL database types, shared responsibility model, etc.),
+  all passing pydantic validation.
