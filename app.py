@@ -7,9 +7,23 @@ from llm import generate_quiz, generate_summary, generate_weak_topics_quiz
 from pdf_utils import chunk_text, clean_text, extract_text, is_empty_or_scanned
 from schedule import generate_schedule
 
-st.set_page_config(page_title="Notes to Exam-Ready", page_icon="📚")
+st.set_page_config(page_title="Notes to Exam-Ready", page_icon="📚", layout="centered")
+
 st.title("📚 Notes to Exam-Ready")
-st.caption("Upload a lecture-notes PDF to get a summary and a practice quiz.")
+st.subheader("Turn your lecture notes into a summary, a practice quiz, and a study plan — in minutes.")
+
+how_it_works = st.columns(3)
+with how_it_works[0]:
+    st.markdown("**📄 1. Upload**")
+    st.caption("Drop in your lecture-notes PDF")
+with how_it_works[1]:
+    st.markdown("**🧠 2. Learn**")
+    st.caption("Get a summary and a practice quiz")
+with how_it_works[2]:
+    st.markdown("**📅 3. Review**")
+    st.caption("Follow a spaced-repetition schedule")
+
+st.divider()
 
 # Cached so that unrelated reruns (e.g. clicking other buttons) don't burn
 # API quota re-generating the same summary/quiz for the same text.
@@ -24,7 +38,7 @@ FRIENDLY_LLM_ERROR = (
     "(rate limits or a busy model) - please wait a moment and try again."
 )
 
-uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+uploaded_file = st.file_uploader("📄 Upload a PDF", type="pdf")
 
 if uploaded_file is not None:
     # Only re-extract/chunk when a new file is uploaded.
@@ -46,7 +60,7 @@ if uploaded_file is not None:
     else:
         chunks = st.session_state["chunks"]
 
-        st.subheader("Summary")
+        st.subheader("🧠 Summary")
         if st.button("Generate Summary"):
             with st.spinner("Summarizing..."):
                 try:
@@ -58,7 +72,8 @@ if uploaded_file is not None:
         if "summary" in st.session_state:
             st.write(st.session_state["summary"])
 
-        st.subheader("Quiz")
+        st.divider()
+        st.subheader("📝 Quiz")
         if st.button("Generate Quiz"):
             with st.spinner("Writing quiz questions..."):
                 try:
@@ -104,7 +119,8 @@ if uploaded_file is not None:
                 st.session_state["wrong_questions"] = wrong_questions
 
         if st.session_state.get("wrong_questions"):
-            st.subheader("Weak Topics")
+            st.divider()
+            st.subheader("🎯 Weak Topics")
             st.write(
                 f"You missed {len(st.session_state['wrong_questions'])} "
                 f"question(s). Practice those concepts again:"
@@ -149,7 +165,8 @@ if uploaded_file is not None:
 
                     st.info(f"Score: {weak_score} / {len(weak_quiz.questions)}")
 
-        st.subheader("Study Schedule")
+        st.divider()
+        st.subheader("📅 Study Schedule")
         exam_date = st.date_input(
             "When is your exam?", min_value=date.today() + timedelta(days=1)
         )
